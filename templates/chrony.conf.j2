@@ -1,0 +1,18 @@
+{% for server in ntp_servers -%}
+server {{ server }} {{ ntp_server_options }}
+{% endfor %}
+
+stratumweight {{ ntp_stratumweight }}
+driftfile /var/lib/chrony/drift
+makestep 1 3
+rtcsync
+bindcmdaddress 127.0.0.1
+bindcmdaddress ::1
+commandkey 1
+generatecommandkey
+noclientlog
+logchange 0.5
+keyfile /etc/chrony.keys
+logdir /var/log/chrony
+#log measurements statistics tracking
+#allow 192.168/16
