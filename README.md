@@ -1,16 +1,3 @@
-<p align="right">
-    <a href="https://travis-ci.org/epiloque/ansible-ntp">
-        <img src="https://travis-ci.org/epiloque/ansible-ntp.svg?branch=master"
-             alt="build status">
-    </a>
-        <a href="https://galaxy.ansible.com/epiloque/ntp">
-        <img src="https://img.shields.io/badge/ansible--galaxy-ntp-blue.svg"
-             alt="ansible galaxy">
-    </a>
-</p>
-
-ntp role
-
 ## Role Variables
 
 Available variables are listed below, along with default values:
@@ -34,7 +21,3 @@ ntp_stratumweight: 0.001
   roles:
     - epiloque.ntp
 ```
-
-## License
-
-BSD
