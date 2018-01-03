@@ -6,4 +6,4 @@
 
 - hosts: test-images
   roles:
-  - role: epiloque.ntp
+  - role: escapace.ntp

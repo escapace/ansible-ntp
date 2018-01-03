@@ -1,7 +1,6 @@
 galaxy_info:
-  author: Mark Milstein
   description: ntp role
-  issue_tracker_url: https://github.com/epiloque/ansible-ntp/issues
+  issue_tracker_url: https://github.com/escapace/ansible-ntp/issues
   license: Apache-2.0
   min_ansible_version: 2.4
   github_branch: master
@@ -11,8 +10,8 @@ galaxy_info:
     - 7
 
   galaxy_tags:
-  - epiloque
+  - escapace
   - ntp
 
 dependencies:
-  - { role: epiloque.packagecloud }
+  - { role: escapace.packagecloud }
