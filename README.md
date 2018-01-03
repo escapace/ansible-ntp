@@ -19,5 +19,5 @@ ntp_stratumweight: 0.001
 ```yaml
 - hosts: servers
   roles:
-    - epiloque.ntp
+    - escapace.ntp
 ```

@@ -1,5 +1,5 @@
-- src: epiloque.provision_docker
+- src: escapace.provision_docker
   name: provision_docker
 
-- src: epiloque.packagecloud
-  name: epiloque.packagecloud
+- src: escapace.packagecloud
+  name: escapace.packagecloud
