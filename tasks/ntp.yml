@@ -11,9 +11,9 @@
     force: yes
 
 - name: install chrony
-  action: "{{ ansible_pkg_mgr }} name={{ item }} state=present"
-  with_items:
-    - chrony
+  package:
+    name: ["chrony"]
+    state: present
 
 - name: set chrony configuration
   template: src=templates/chrony.conf.j2 dest=/etc/chrony.conf owner=root group=root mode=0644
