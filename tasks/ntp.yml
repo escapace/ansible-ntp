@@ -22,3 +22,4 @@
 
 - name: ensure that chronyd is running
   service: name=chronyd state=started enabled=yes
+  changed_when: false
