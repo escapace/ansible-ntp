@@ -3,17 +3,17 @@
 - name: ensure ntp package is absent
   package: name=ntp state=absent
 
+- name: install chrony
+  package:
+    name: ["chrony", "tzdata"]
+    state: present
+
 - name: set timezone to etc/utc
   file:
     src: /usr/share/zoneinfo/Etc/UTC
     dest: /etc/localtime
     state: link
-    force: yes
-
-- name: install chrony
-  package:
-    name: ["chrony"]
-    state: present
+    force: true
 
 - name: set chrony configuration
   template: src=templates/chrony.conf.j2 dest=/etc/chrony.conf owner=root group=root mode=0644
@@ -22,4 +22,4 @@
 
 - name: ensure that chronyd is running
   service: name=chronyd state=started enabled=yes
-  changed_when: false
+  when: not ntp_role_debug|bool

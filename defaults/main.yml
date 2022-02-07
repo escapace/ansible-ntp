@@ -8,3 +8,5 @@ ntp_servers:
 
 ntp_server_options: iburst
 ntp_stratumweight: 0.001
+
+ntp_role_debug: false

@@ -1,5 +1,7 @@
 ---
 - name: Converge
   hosts: all
+  vars:
+    ntp_role_debug: true
   roles:
     - role: escapace.ntp
