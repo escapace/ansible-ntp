@@ -1,5 +1,5 @@
 ---
 
 - name: chronyd restart
-  service: name=chronyd state=restarted
+  ansible.builtin.service: name=chronyd state=restarted
   when: not ntp_role_debug|bool
