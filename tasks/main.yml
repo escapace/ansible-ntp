@@ -1,4 +1,4 @@
 ---
 
-- include_tasks: ntp.yml
+- ansible.builtin.include_tasks: ntp.yml
   when: ansible_os_family == "RedHat"
