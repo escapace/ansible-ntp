@@ -1,7 +1,9 @@
 ---
 
 - name: ensure ntp package is absent
-  ansible.builtin.package: name=ntp state=absent
+  ansible.builtin.package:
+    name: ntp
+    state: absent
 
 - name: install chrony
   ansible.builtin.package:
@@ -16,10 +18,18 @@
     force: true
 
 - name: set chrony configuration
-  ansible.builtin.template: src=templates/chrony.conf.j2 dest=/etc/chrony.conf owner=root group=root mode=0644
+  ansible.builtin.template:
+    src: templates/chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: 0644
   notify:
     - chronyd restart
 
 - name: ensure that chronyd is running
-  ansible.builtin.service: name=chronyd state=started enabled=yes
+  ansible.builtin.service:
+    name: chronyd
+    state: started
+    enabled: true
   when: not ntp_role_debug|bool
