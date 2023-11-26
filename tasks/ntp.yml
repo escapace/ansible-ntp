@@ -23,7 +23,7 @@
     dest: /etc/chrony.conf
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   notify:
     - chronyd restart
 
@@ -33,3 +33,13 @@
     state: started
     enabled: true
   when: not ntp_role_debug|bool
+
+- name: configure deaemon options
+  ansible.builtin.template:
+    src: 'templates/chronyd.j2'
+    dest: '/etc/sysconfig/chronyd'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  notify:
+    - chronyd restart
