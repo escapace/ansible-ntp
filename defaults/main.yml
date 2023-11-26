@@ -1,12 +1,48 @@
 ---
+# # Hostname or address of the server
+# - hostname: foo.example.com
+#   # Minimum polling interval (default 6)
+#   minpoll: 4
+#   # Maximum polling interval (default 10)
+#   maxpoll: 8
+#   # Flag enabling fast initial synchronization # (default false)
+#   iburst: true
+#   # Flag indicating that each resolved address of the hostname is a separate
+#   # NTP server (default false)
+#   pool: true
+#   # Flag enabling Network Time Security (NTS) authentication mechanism
+#   # (default false, supported only with chrony >= 4.0)
+#   nts: false
+#   # Flag marking the source to be preferred for synchronization over other
+#   # sources (default false)
+#   prefer: false
+#   # Flag marking the source to be trusted over sources that don't have this
+#   # flag (default false)
+#   trust: false
+#   # Flag enabling interleaved mode (default false)
+#   xleave: false
+#   # Number of NTP measurements per clock update (default 1)
+#   filter: 1
 
 ntp_servers:
-  - "0.pool.ntp.org"
-  - "1.pool.ntp.org"
-  - "2.pool.ntp.org"
-  - "3.pool.ntp.org"
+  - hostname: 0.pool.ntp.org
+    pool: true
+    iburst: true
+  - hostname: 1.pool.ntp.org
+    pool: true
+    iburst: true
+  - hostname: 2.pool.ntp.org
+    pool: true
+    iburst: true
+  - hostname: 3.pool.ntp.org
+    pool: true
+    iburst: true
 
-ntp_server_options: iburst
-ntp_stratumweight: 0.001
+ntp_step_threshold: -1.0
+ntp_min_sources: 1
+ntp_max_distance: 0
+
+# https://chrony-project.org/doc/3.5/chronyd.html
+ntp_daemon_options: "-F 2"
 
 ntp_role_debug: false
