@@ -1,5 +1,4 @@
 ---
-
 - name: chronyd restart
   ansible.builtin.service:
     name: chronyd

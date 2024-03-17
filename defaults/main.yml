@@ -25,7 +25,7 @@
 #   filter: 1
 
 ntp_servers:
-  - hostname: 0.pool.ntp.org
+  - hostname: "0.pool.ntp.org"
     pool: true
     iburst: true
   - hostname: 1.pool.ntp.org
@@ -43,6 +43,6 @@ ntp_min_sources: 1
 ntp_max_distance: 0
 
 # https://chrony-project.org/doc/3.5/chronyd.html
-ntp_daemon_options: "-F 2"
+ntp_daemon_options: -F 2
 
 ntp_role_debug: false
