@@ -1,5 +1,4 @@
 ---
-
 - name: ensure ntp package is absent
   ansible.builtin.package:
     name: ntp
@@ -7,7 +6,7 @@
 
 - name: install chrony
   ansible.builtin.package:
-    name: ["chrony", "tzdata"]
+    name: [chrony, tzdata]
     state: present
 
 - name: set timezone to etc/utc
@@ -23,7 +22,7 @@
     dest: /etc/chrony.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   notify:
     - chronyd restart
 
@@ -36,10 +35,10 @@
 
 - name: configure deaemon options
   ansible.builtin.template:
-    src: 'templates/chronyd.j2'
-    dest: '/etc/sysconfig/chronyd'
-    owner: 'root'
-    group: 'root'
-    mode: '0644'
+    src: templates/chronyd.j2
+    dest: /etc/sysconfig/chronyd
+    owner: root
+    group: root
+    mode: "0644"
   notify:
     - chronyd restart
