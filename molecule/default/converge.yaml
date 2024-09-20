@@ -4,4 +4,4 @@
   vars:
     ntp_role_debug: true
   roles:
-    - role: escapace.ntp
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"

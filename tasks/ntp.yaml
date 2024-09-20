@@ -22,7 +22,7 @@
     dest: /etc/chrony.conf
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
   notify:
     - chronyd restart
 
@@ -39,6 +39,6 @@
     dest: /etc/sysconfig/chronyd
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
   notify:
     - chronyd restart
