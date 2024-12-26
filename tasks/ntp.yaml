@@ -16,7 +16,7 @@
     state: link
     force: true
 
-- name: set chrony configuration
+- name: write chrony.conf
   ansible.builtin.template:
     src: templates/chrony.conf.j2
     dest: /etc/chrony.conf
@@ -24,7 +24,7 @@
     group: root
     mode: '0644'
 
-- name: configure deaemon options
+- name: chronyd sysconfig options
   ansible.builtin.template:
     src: templates/chronyd.j2
     dest: /etc/sysconfig/chronyd
