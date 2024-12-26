@@ -95,7 +95,7 @@
 
 - name: knot-resolver policy
   ansible.builtin.template:
-    src: policy-ntp.lua
+    src: knot-resolver-policy-ntp.lua.j2
     dest: /etc/knot-resolver/config.d/810-policy-ntp.lua
     owner: root
     group: knot-resolver
