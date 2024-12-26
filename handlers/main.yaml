@@ -1,6 +1,11 @@
 ---
-- name: chronyd restart
+- name: ntp daemon-reload
+  when: not ntp_role_debug|bool
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: ntp enable
+  when: not ntp_role_debug|bool
   ansible.builtin.service:
     name: chronyd
-    state: restarted
-  when: not ntp_role_debug|bool
+    enabled: true

@@ -23,15 +23,6 @@
     owner: root
     group: root
     mode: '0644'
-  notify:
-    - chronyd restart
-
-- name: ensure that chronyd is running
-  ansible.builtin.service:
-    name: chronyd
-    state: started
-    enabled: true
-  when: not ntp_role_debug|bool
 
 - name: configure deaemon options
   ansible.builtin.template:
@@ -40,5 +31,74 @@
     owner: root
     group: root
     mode: '0644'
+
+- name: chronyd.service
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=NTP client/server
+      Documentation=man:chronyd(8) man:chrony.conf(5)
+      DefaultDependencies=no
+      After=systemd-sysusers.service nss-lookup.target
+      Before=time-set.target sysinit.target shutdown.target
+      Conflicts=shutdown.target
+      Wants=time-set.target
+
+      [Service]
+      Type=forking
+      PIDFile=/run/chrony/chronyd.pid
+      EnvironmentFile=-/etc/sysconfig/chronyd
+      ExecStart=/usr/sbin/chronyd $OPTIONS
+
+      CapabilityBoundingSet=~CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_AUDIT_WRITE
+      CapabilityBoundingSet=~CAP_BLOCK_SUSPEND CAP_KILL CAP_LEASE CAP_LINUX_IMMUTABLE
+      CapabilityBoundingSet=~CAP_MAC_ADMIN CAP_MAC_OVERRIDE CAP_MKNOD CAP_SYS_ADMIN
+      CapabilityBoundingSet=~CAP_SYS_BOOT CAP_SYS_CHROOT CAP_SYS_MODULE CAP_SYS_PACCT
+      CapabilityBoundingSet=~CAP_SYS_PTRACE CAP_SYS_RAWIO CAP_SYS_TTY_CONFIG CAP_WAKE_ALARM
+      DeviceAllow=char-pps rw
+      DeviceAllow=char-ptp rw
+      DeviceAllow=char-rtc rw
+      DevicePolicy=closed
+      LockPersonality=yes
+      MemoryDenyWriteExecute=yes
+      NoNewPrivileges=yes
+      PrivateTmp=yes
+      ProtectControlGroups=yes
+      ProtectHome=yes
+      ProtectHostname=yes
+      ProtectKernelLogs=yes
+      ProtectKernelModules=yes
+      ProtectKernelTunables=yes
+      ProtectProc=invisible
+      ProtectSystem=strict
+      ReadWritePaths=/run /var/lib/chrony -/var/log
+      RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+      RestrictNamespaces=yes
+      RestrictSUIDSGID=yes
+      SystemCallArchitectures=native
+      SystemCallFilter=~@cpu-emulation @debug @module @mount @obsolete @raw-io @reboot @swap
+
+      # Adjust restrictions for /usr/sbin/sendmail (mailonchange directive)
+      NoNewPrivileges=no
+      ReadWritePaths=-/var/spool
+      RestrictAddressFamilies=AF_NETLINK
+
+      [Install]
+      WantedBy=sysinit.target
+    dest: /etc/systemd/system/chronyd.service
+    owner: root
+    group: root
+    mode: '0644'
   notify:
-    - chronyd restart
+    - ntp daemon-reload
+    - ntp enable
+
+- name: knot-resolver policy
+  ansible.builtin.template:
+    src: policy-ntp.lua
+    dest: /etc/knot-resolver/config.d/810-policy-ntp.lua
+    owner: root
+    group: knot-resolver
+    mode: '0640'
+  tags:
+    - kresd-conf
