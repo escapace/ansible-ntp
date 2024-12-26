@@ -3,5 +3,7 @@
   hosts: all
   vars:
     ntp_role_debug: true
+    ferm_role_debug: true
+    kresd_role_debug: true
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
