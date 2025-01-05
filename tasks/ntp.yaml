@@ -22,7 +22,7 @@
     dest: /etc/chrony.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: chronyd sysconfig options
   ansible.builtin.template:
@@ -30,7 +30,7 @@
     dest: /etc/sysconfig/chronyd
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: chronyd.service
   ansible.builtin.copy:
@@ -88,7 +88,7 @@
     dest: /etc/systemd/system/chronyd.service
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   notify:
     - ntp daemon-reload
     - ntp enable
@@ -99,6 +99,6 @@
     dest: /etc/knot-resolver/config.d/810-policy-ntp.lua
     owner: root
     group: knot-resolver
-    mode: '0640'
+    mode: "0640"
   tags:
     - kresd-conf
