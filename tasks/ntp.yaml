@@ -23,6 +23,8 @@
     owner: root
     group: root
     mode: "0644"
+  notify:
+    - ntp restart chronyd
 
 - name: chronyd sysconfig options
   ansible.builtin.template:
@@ -31,6 +33,8 @@
     owner: root
     group: root
     mode: "0644"
+  notify:
+    - ntp restart chronyd
 
 - name: chronyd.service
   ansible.builtin.copy:
@@ -91,7 +95,12 @@
     mode: "0644"
   notify:
     - ntp daemon-reload
-    - ntp enable
+    - ntp restart chronyd
+
+- name: enable chronyd
+  ansible.builtin.systemd_service:
+    name: chronyd.service
+    enabled: true
 
 - name: knot-resolver policy
   ansible.builtin.template:
@@ -100,5 +109,7 @@
     owner: root
     group: knot-resolver
     mode: "0640"
+  notify:
+    - ntp restart knot-resolver
   tags:
     - kresd-conf
