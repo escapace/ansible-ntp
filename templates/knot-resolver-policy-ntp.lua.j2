@@ -1,8 +1,8 @@
-ntp = policy.todnames(filter_strings({
+ntp = policy.todnames({
   {% for server in ntp_servers %}
   '{{ server.hostname }}.',
   {% endfor %}
-}))
+})
 
 policy.add(policy.suffix(policy.FLAGS({'NO_CACHE', 'NO_EDNS', 'NO_0X20'}), ntp))
 
@@ -10,12 +10,12 @@ policy.add(policy.suffix(policy.FLAGS({'NO_CACHE', 'NO_EDNS', 'NO_0X20'}), ntp))
 policy.add(policy.suffix(policy.STUB({
 {% endraw %}
 {% for item in ntp_dns_forward %}
-{% if kresd_ipv6 and item.address | ansible.utils.ipv6 %}
+{% if ntp_kresd_config.network['do-ipv6'] and item.address | ansible.utils.ipv6 %}
 {{ '\'' + item.address | ansible.utils.ipv6('address') + '@' + item.port | default(53) | string + '\',' }}
 {% endif %}
 {% endfor %}
 {% for item in ntp_dns_forward %}
-{% if kresd_ipv4 and item.address | ansible.utils.ipv4 %}
+{% if ntp_kresd_config.network['do-ipv4'] and item.address | ansible.utils.ipv4 %}
 {{ '\'' + item.address | ansible.utils.ipv4('address') + '@' + item.port | default(53) | string + '\',' }}
 {% endif %}
 {% endfor %}

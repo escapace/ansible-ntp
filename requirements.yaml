@@ -1,25 +1,8 @@
 ---
 collections:
   - name: ansible.utils
-  - name: community.general
+    version: '>=6.1.1'
+  - name: community.docker
+  - name: ansible.posix
 
-roles:
-  - name: escapace.kresd
-    src: https://github.com/escapace/ansible-kresd
-    version: origin/trunk
-
-  - name: escapace.aws_environment
-    src: https://github.com/escapace/ansible-aws_environment
-    version: origin/trunk
-
-  - name: escapace.aws_cli
-    src: https://github.com/escapace/ansible-aws_cli
-    version: origin/trunk
-
-  - name: escapace.escapace_releases
-    src: https://github.com/escapace/ansible-escapace_releases
-    version: origin/trunk
-
-  - name: escapace.epel
-    src: https://github.com/escapace/ansible-epel
-    version: origin/trunk
+roles: []

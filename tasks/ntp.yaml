@@ -102,14 +102,15 @@
     name: chronyd.service
     enabled: true
 
-- name: knot-resolver policy
-  ansible.builtin.template:
-    src: knot-resolver-policy-ntp.lua.j2
-    dest: /etc/knot-resolver/config.d/810-policy-ntp.lua
-    owner: root
-    group: knot-resolver
-    mode: "0640"
-  notify:
-    - ntp restart knot-resolver
+- name: check for knot resolver configuration directory
+  ansible.builtin.stat:
+    path: /etc/knot-resolver/config.d
+  register: ntp_kresd_directory
+  tags:
+    - kresd-conf
+
+- name: configure optional knot resolver policy
+  ansible.builtin.include_tasks: kresd.yaml
+  when: ntp_kresd_directory.stat.isdir | default(false)
   tags:
     - kresd-conf

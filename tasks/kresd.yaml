@@ -1,0 +1,93 @@
+---
+- name: configure detected knot resolver integration
+  tags:
+    - kresd-conf
+  block:
+    - name: check knot resolver configuration
+      ansible.builtin.stat:
+        path: /etc/knot-resolver/config.yaml
+      register: ntp_kresd_config_file
+
+    - name: require a complete knot resolver installation
+      ansible.builtin.assert:
+        that:
+          - ntp_kresd_config_file.stat.isreg | default(false)
+        fail_msg: >-
+          /etc/knot-resolver/config.d exists but config.yaml is missing.
+          Install and configure Knot Resolver before running ntp.
+
+    - name: check knot resolver group
+      ansible.builtin.getent:
+        database: group
+        key: knot-resolver
+
+    - name: read knot resolver configuration
+      ansible.builtin.slurp:
+        src: /etc/knot-resolver/config.yaml
+      register: ntp_kresd_config_content
+
+    - name: parse knot resolver configuration
+      ansible.builtin.set_fact:
+        ntp_kresd_config: "{{ ntp_kresd_config_content.content | b64decode | from_yaml }}"
+
+    - name: validate knot resolver network configuration
+      ansible.builtin.assert:
+        that:
+          - ntp_kresd_config is mapping
+          - ntp_kresd_config.get('network') is mapping
+          - (ntp_kresd_config.network.get('do-ipv4') | type_debug) == 'bool'
+          - (ntp_kresd_config.network.get('do-ipv6') | type_debug) == 'bool'
+          - ntp_kresd_config.network['do-ipv4'] or ntp_kresd_config.network['do-ipv6']
+        fail_msg: >-
+          Knot Resolver config.yaml must set network.do-ipv4 and network.do-ipv6
+          to booleans with at least one address family enabled.
+
+    - name: validate ntp dns policy collections
+      ansible.builtin.assert:
+        that:
+          - ntp_servers is sequence and ntp_servers is not string and ntp_servers is not mapping
+          - ntp_servers | length > 0
+          - ntp_dns_forward is sequence and ntp_dns_forward is not string and ntp_dns_forward is not mapping
+          - ntp_dns_forward | length > 0
+        fail_msg: The Knot Resolver integration requires non-empty ntp_servers and ntp_dns_forward lists.
+
+    - name: validate ntp dns policy names
+      ansible.builtin.assert:
+        that:
+          - item is mapping
+          - item.get('hostname') is string
+          - item.hostname is match('^[a-zA-Z0-9_.:-]+$')
+        fail_msg: Each NTP server requires a hostname safe for the Knot Resolver Lua policy.
+      loop: "{{ ntp_servers }}"
+
+    - name: validate ntp dns forwarders
+      ansible.builtin.assert:
+        that:
+          - item is mapping
+          - item.get('address') is string
+          - "'/' not in item.address"
+          - (item.address | ansible.utils.ipaddr) != false
+          - (item.get('port', 53) | type_debug) == 'int'
+          - item.get('port', 53) >= 1 and item.get('port', 53) <= 65535
+        fail_msg: Each NTP DNS forwarder requires an IP address and an optional integer port from 1 through 65535.
+      loop: "{{ ntp_dns_forward }}"
+
+    - name: require an enabled ntp dns forwarder address family
+      ansible.builtin.assert:
+        that:
+          - >-
+            (ntp_kresd_config.network['do-ipv4'] and
+             (ntp_dns_forward | map(attribute='address') | list | ansible.utils.ipv4 | length > 0)) or
+            (ntp_kresd_config.network['do-ipv6'] and
+             (ntp_dns_forward | map(attribute='address') | list | ansible.utils.ipv6 | length > 0))
+        fail_msg: ntp_dns_forward must include an address in an enabled Knot Resolver address family.
+
+    - name: write knot resolver ntp policy
+      ansible.builtin.template:
+        src: knot-resolver-policy-ntp.lua.j2
+        dest: /etc/knot-resolver/config.d/810-policy-ntp.lua
+        owner: root
+        group: knot-resolver
+        mode: "0640"
+      notify:
+        - ntp restart knot-resolver

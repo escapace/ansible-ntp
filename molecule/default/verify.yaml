@@ -1,0 +1,211 @@
+---
+- name: verify
+  hosts: all
+  tasks:
+    - name: gather installed packages
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: check standalone resolver directory
+      ansible.builtin.stat:
+        path: /etc/knot-resolver/config.d
+      register: ntp_test_directory
+
+    - name: check chronyd boot enablement
+      ansible.builtin.command:
+        argv: [systemctl, is-enabled, chronyd.service]
+      changed_when: false
+      register: ntp_test_enabled
+
+    - name: verify standalone installation without extra repositories
+      ansible.builtin.assert:
+        that:
+          - "'chrony' in ansible_facts.packages"
+          - "'tzdata' in ansible_facts.packages"
+          - "'epel-release' not in ansible_facts.packages"
+          - "'knot-resolver' not in ansible_facts.packages"
+          - not ntp_test_directory.stat.exists
+          - ntp_test_enabled.stdout == 'enabled'
+
+    - name: validate chrony configuration without starting the daemon
+      ansible.builtin.command:
+        argv: [/usr/sbin/chronyd, -p, -f, /etc/chrony.conf]
+      changed_when: false
+
+    # These fixtures exercise the integration contract without installing kresd.
+    # They do not prove resolver startup, reload, or DNS packet behavior.
+    - name: create resolver fixture group
+      ansible.builtin.group:
+        name: knot-resolver
+        system: true
+
+    - name: create resolver fixture directory
+      ansible.builtin.file:
+        path: /etc/knot-resolver/config.d
+        state: directory
+        mode: "0750"
+
+    - name: reject an incomplete resolver installation
+      block:
+        - name: invoke ntp with missing resolver configuration
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+
+        - name: fail if missing resolver configuration was accepted
+          ansible.builtin.fail:
+            msg: ntp accepted a missing resolver configuration
+      rescue:
+        - name: verify incomplete installation diagnostic
+          ansible.builtin.assert:
+            that:
+              - "'config.yaml is missing' in ansible_failed_result.msg"
+
+    - name: create dual stack resolver configuration fixture
+      ansible.builtin.copy:
+        content: |
+          network:
+            do-ipv4: true
+            do-ipv6: true
+        dest: /etc/knot-resolver/config.yaml
+        mode: "0640"
+
+    - name: configure ntp with the detected resolver
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+
+    - name: read dual stack policy
+      ansible.builtin.slurp:
+        src: /etc/knot-resolver/config.d/810-policy-ntp.lua
+      register: ntp_test_dual_stack_policy
+
+    - name: check policy ownership and modification time
+      ansible.builtin.stat:
+        path: /etc/knot-resolver/config.d/810-policy-ntp.lua
+      register: ntp_test_policy_before
+
+    - name: verify dual stack policy without kresd role variables
+      ansible.builtin.assert:
+        that:
+          - kresd_ipv4 is not defined
+          - kresd_ipv6 is not defined
+          - "'1.1.1.1@53' in (ntp_test_dual_stack_policy.content | b64decode)"
+          - "'2606:4700:4700::1111@53' in (ntp_test_dual_stack_policy.content | b64decode)"
+          - ntp_test_policy_before.stat.gr_name == 'knot-resolver'
+          - ntp_test_policy_before.stat.mode == '0640'
+
+    - name: reapply detected resolver integration
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+
+    - name: check unchanged policy modification time
+      ansible.builtin.stat:
+        path: /etc/knot-resolver/config.d/810-policy-ntp.lua
+      register: ntp_test_policy_after
+
+    - name: verify integration idempotence
+      ansible.builtin.assert:
+        that:
+          - ntp_test_policy_before.stat.mtime == ntp_test_policy_after.stat.mtime
+
+    - name: disable ipv6 in resolver configuration fixture
+      ansible.builtin.copy:
+        content: |
+          network:
+            do-ipv4: true
+            do-ipv6: false
+        dest: /etc/knot-resolver/config.yaml
+        mode: "0640"
+
+    - name: apply ipv4 only resolver integration
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+
+    - name: read ipv4 only policy
+      ansible.builtin.slurp:
+        src: /etc/knot-resolver/config.d/810-policy-ntp.lua
+      register: ntp_test_ipv4_policy
+
+    - name: verify installed address family settings take effect
+      ansible.builtin.assert:
+        that:
+          - "'1.1.1.1@53' in (ntp_test_ipv4_policy.content | b64decode)"
+          - "'2606:4700:4700::1111' not in (ntp_test_ipv4_policy.content | b64decode)"
+
+    - name: reject invalid dns forwarders
+      block:
+        - name: invoke integration with an invalid forwarder port
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+            tasks_from: kresd
+          vars:
+            ntp_dns_forward:
+              - address: 1.1.1.1
+                port: 65536
+
+        - name: fail if invalid forwarder was accepted
+          ansible.builtin.fail:
+            msg: ntp accepted an invalid forwarder
+      rescue:
+        - name: verify invalid forwarder diagnostic
+          ansible.builtin.assert:
+            that:
+              - "'integer port from 1 through 65535' in (ansible_failed_result.results | map(attribute='msg') | join(' '))"
+
+    - name: reject forwarders from a disabled address family
+      block:
+        - name: invoke integration with only ipv6 forwarders
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+            tasks_from: kresd
+          vars:
+            ntp_dns_forward:
+              - address: "2606:4700:4700::1111"
+
+        - name: fail if disabled address family was accepted
+          ansible.builtin.fail:
+            msg: ntp accepted forwarders from a disabled address family
+      rescue:
+        - name: verify disabled address family diagnostic
+          ansible.builtin.assert:
+            that:
+              - "'enabled Knot Resolver address family' in ansible_failed_result.msg"
+
+    - name: create invalid resolver configuration fixture
+      ansible.builtin.copy:
+        content: |
+          network:
+            do-ipv4: 'true'
+            do-ipv6: false
+        dest: /etc/knot-resolver/config.yaml
+        mode: "0640"
+
+    - name: reject invalid resolver settings
+      block:
+        - name: invoke integration with non boolean address family
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+            tasks_from: kresd
+
+        - name: fail if invalid resolver settings were accepted
+          ansible.builtin.fail:
+            msg: ntp accepted invalid resolver settings
+      rescue:
+        - name: verify invalid resolver diagnostic
+          ansible.builtin.assert:
+            that:
+              - "'to booleans' in ansible_failed_result.msg"
+
+    - name: read policy after rejected changes
+      ansible.builtin.slurp:
+        src: /etc/knot-resolver/config.d/810-policy-ntp.lua
+      register: ntp_test_policy_after_rejection
+
+    - name: verify rejected changes preserve the policy
+      ansible.builtin.assert:
+        that:
+          - ntp_test_policy_after_rejection.content == ntp_test_ipv4_policy.content
+
+    - name: remove resolver fixtures
+      ansible.builtin.file:
+        path: /etc/knot-resolver
+        state: absent
