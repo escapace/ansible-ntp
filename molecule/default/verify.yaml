@@ -2,6 +2,18 @@
 - name: verify
   hosts: all
   tasks:
+    - name: read crash recovery drop-in
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/chronyd.service.d/30-ansible-crash-recovery.conf
+      register: ntp_test_crash_recovery
+
+    - name: verify crash recovery without overriding limits or startup timeout
+      ansible.builtin.assert:
+        that:
+          - >-
+            (ntp_test_crash_recovery.content | b64decode).splitlines() ==
+            ['[Service]', 'Restart=on-failure', 'RestartSec=30s']
+
     - name: gather installed packages
       ansible.builtin.package_facts:
         manager: auto

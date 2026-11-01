@@ -3,7 +3,9 @@
 Configures chrony on Red Hat-family systems, removes the legacy `ntp` package,
 and sets the timezone to UTC. Requires root privileges, gathered facts, and
 systemd. Enables chronyd at boot without starting it during image construction;
-configuration changes restart only already-running services. Other OS families
+configuration changes restart only already-running services. A systemd drop-in
+restarts chronyd after failure with a 30-second delay; deliberate stops remain
+stopped. Start limits and startup timeouts remain unchanged. Other OS families
 are left unchanged.
 
 ## Variables
