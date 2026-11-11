@@ -26,9 +26,9 @@
     - name: check chronyd boot enablement
       ansible.builtin.command:
         argv: [systemctl, is-enabled, chronyd.service]
-      changed_when: false
       register: ntp_test_enabled
 
+      changed_when: false
     - name: verify standalone installation without extra repositories
       ansible.builtin.assert:
         that:

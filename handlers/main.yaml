@@ -1,19 +1,21 @@
 ---
 - name: ntp gather service facts before runtime effects
-  ansible.builtin.service_facts:
   listen:
     - ntp restart chronyd
     - ntp restart knot-resolver
 
+  ansible.builtin.service_facts:
 - name: ntp reload systemd manager
+  listen: ntp daemon-reload
+
   ansible.builtin.systemd_service:
     daemon_reload: true
   when:
     - not ansible_check_mode
     - ansible_facts.get("service_mgr") == "systemd"
-  listen: ntp daemon-reload
-
 - name: ntp restart active chronyd
+  listen: ntp restart chronyd
+
   ansible.builtin.systemd_service:
     name: chronyd.service
     state: restarted
@@ -23,9 +25,8 @@
       (ansible_facts.services | default({}))
       .get("chronyd.service", {})
       .get("state") == "running"
-  listen: ntp restart chronyd
-
 - name: ntp restart active knot-resolver
+  listen: ntp restart knot-resolver
   ansible.builtin.systemd_service:
     name: knot-resolver.service
     state: restarted
@@ -35,4 +36,3 @@
       (ansible_facts.services | default({}))
       .get("knot-resolver.service", {})
       .get("state") == "running"
-  listen: ntp restart knot-resolver
